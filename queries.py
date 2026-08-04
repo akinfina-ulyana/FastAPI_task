@@ -1,9 +1,9 @@
-from datetime import  date
+from datetime import date
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db_models import User, Transaction
+from db_models import Transaction, User
 from python_models import CurrencyEnum
 
 EXCHANGE_RATES_TO_USD = {

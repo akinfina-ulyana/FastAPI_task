@@ -1,6 +1,6 @@
 
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Numeric, UniqueConstraint
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -36,4 +36,3 @@ class Transaction(Base):
     amount = Column(Numeric, nullable=True)
     status = Column(String, nullable=True)
     created = Column(DateTime, nullable=True)
-

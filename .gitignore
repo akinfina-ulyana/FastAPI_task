@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Окружение
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+
+# env / секреты
+.env
+.env.*
+!.env.example
+
+# БД
+*.sqlite3
+db.sqlite3
+
+# Docker
+*.log
