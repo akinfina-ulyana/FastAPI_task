@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Author <author@gmail.com>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.11, <3.13"
@@ -11,13 +12,12 @@ uvicorn = "^0.23.2"
 httpx = "^0.25.0"
 fastapi = "^0.115.6"
 sqlalchemy = "^2.0.37"
-aiosqlite = "^0.20.0"
+asyncpg = "^0.31.0"
+python-dotenv = "^1.2.2"
 
 
 [tool.poetry.group.dev.dependencies]
 faker = "^19.10.0"
-pylint = "^3.0.1"
-pylint-pydantic = "^0.3.0"
 pytest = "^7.4.2"
 pytest-alembic = "^0.10.7"
 pytest-asyncio = "^0.21.1"
@@ -27,6 +27,10 @@ pytest-httpx = "^0.26.0"
 pytest-mock = "^3.11.1"
 pytest-mock-server = "^0.3.0"
 pytest-xdist = "^3.3.1"
+mypy = "^2.3.0"
+flake8 = "^7.3.0"
+isort = "^8.0.1"
+pre-commit = "^4.6.1"
 
 
 [build-system]
