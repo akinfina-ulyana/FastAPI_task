@@ -3,8 +3,8 @@ from datetime import date
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db_models import Transaction, User
-from python_models import CurrencyEnum
+from app.models import Transaction, User
+from app.schemas import CurrencyEnum
 
 EXCHANGE_RATES_TO_USD = {
     CurrencyEnum.USD: 1,
