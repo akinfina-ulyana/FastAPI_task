@@ -1,14 +1,25 @@
-import typing
 from datetime import datetime
+from decimal import Decimal
 
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from app.schemas.enums import CurrencyEnum, UserStatusEnum
+from app.schemas.enums import CurrencyEnum, UserRoleEnum, UserStatusEnum
 
 
 class RequestUserRegisterModel(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, value: str) -> str:
+        if not any(ch.islower() for ch in value):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not any(ch.isupper() for ch in value):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(ch.isdigit() for ch in value):
+            raise ValueError("Password must contain at least one digit")
+        return value
 
 
 class RequestUserLoginModel(BaseModel):
@@ -25,39 +36,21 @@ class RequestUserUpdateModel(BaseModel):
 
 
 class ResponseUserBalanceModel(BaseModel):
-    currency: typing.Optional[CurrencyEnum] = None
-    amount: typing.Optional[float] = None
+    model_config = ConfigDict(from_attributes=True)
+
+    currency: CurrencyEnum
+    amount: Decimal
 
 
 class ResponseUserModel(BaseModel):
-    id: typing.Optional[int]
-    email: typing.Optional[str] = None
-    status: typing.Optional[UserStatusEnum] = None
-    created: typing.Optional[datetime] = None
-    balances: typing.Optional[typing.List[ResponseUserBalanceModel]] = None
+    model_config = ConfigDict(from_attributes=True)
 
-
-class UserModel(BaseModel):
-    id: typing.Optional[int]
-    email: typing.Optional[str] = None
-    status: typing.Optional[UserStatusEnum] = None
-    created: typing.Optional[datetime] = None
-
-
-class UserBalanceModel(BaseModel):
-    id: typing.Optional[int]
-    user_id: typing.Optional[int] = None
-    currency: typing.Optional[CurrencyEnum] = None
-    amount: typing.Optional[float] = None
-
-    @model_validator(mode="before")
-    @classmethod
-    def validate_not_negative(cls, values):
-        if isinstance(values, dict):
-            amount = values.get("amount")
-            if amount is not None and amount < 0:
-                raise ValueError("Amount cannot be negative")
-        return values
+    id: int
+    email: str
+    status: UserStatusEnum
+    role: UserRoleEnum
+    created: datetime
+    balances: list[ResponseUserBalanceModel] = Field(default_factory=list)
 
 
 class TokenResponseModel(BaseModel):
