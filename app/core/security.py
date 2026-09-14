@@ -1,20 +1,22 @@
+import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, cast
 
+import bcrypt
 import jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return str(bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8"))
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return bool(bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8")))
+    except (ValueError, TypeError):
+        return False
 
 
 def create_token(subject: str | int, token_type: str, expires_delta: timedelta) -> str:
@@ -24,8 +26,10 @@ def create_token(subject: str | int, token_type: str, expires_delta: timedelta) 
         "iat": now,
         "exp": now + expires_delta,
         "type": token_type,
+        "jti": secrets.token_hex(16),
     }
-    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    encode = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    return cast(str, encode)
 
 
 def create_access_token(user_id: int | str) -> str:
@@ -45,4 +49,5 @@ def create_refresh_token(user_id: int | str) -> str:
 
 
 def decode_token(token: str) -> dict[str, Any]:
-    return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    decoded = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    return cast(dict[str, Any], decoded)

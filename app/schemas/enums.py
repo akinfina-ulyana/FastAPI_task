@@ -1,7 +1,6 @@
 import enum
 
 
-
 class CurrencyEnum(enum.Enum):
     USD = "USD"
     EUR = "EUR"
@@ -14,9 +13,11 @@ class CurrencyEnum(enum.Enum):
     DOGE = "DOGE"
     USDT = "USDT"
 
+
 class UserStatusEnum(enum.Enum):
     ACTIVE = "ACTIVE"
     BLOCKED = "BLOCKED"
+
 
 class UserRoleEnum(enum.Enum):
     USER = "USER"
