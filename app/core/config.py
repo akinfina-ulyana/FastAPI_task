@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     """Reading configuration from .env"""
     model_config = SettingsConfigDict(
@@ -20,5 +21,8 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    BACKEND_CORS_ORIGINS: list[str] = ["*"]
+
 
 settings = Settings()

@@ -1,70 +1,49 @@
 import typing
 
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from fastapi import APIRouter, Depends, Query, status
 
-from app.core.database import get_async_session
-from app.exceptions import *
-from app.models import UserBalance, User
-from app.schemas import (
-    RequestUserUpdateModel,
-    ResponseUserModel,
-    UserModel,
-    UserStatusEnum,
-)
+from app.dependencies import get_current_admin, get_current_user, get_user_service
+from app.models import User
+from app.schemas import RequestUserUpdateModel, ResponseUserModel
+from app.schemas.enums import UserStatusEnum
+from app.services.user import UserService
 
 router = APIRouter(tags=["users"])
 
 
-@router.get("/users", response_model=typing.Optional[list[ResponseUserModel]] | None, status_code=status.HTTP_200_OK)
+@router.get("/me", response_model=ResponseUserModel, status_code=status.HTTP_200_OK)
+async def get_me(
+        current_user: User = Depends(get_current_user),
+        user_service: UserService = Depends(get_user_service),
+) -> ResponseUserModel:
+    return await user_service.get_profile(current_user)
+
+
+@router.get("/users", response_model=list[ResponseUserModel], status_code=status.HTTP_200_OK)
 async def get_users(
         user_id: typing.Optional[int] = None,
         email: typing.Optional[str] = None,
-        user_status: typing.Optional[str] = None,
-        session: AsyncSession = Depends(get_async_session)
-) -> typing.List[ResponseUserModel]:
-    q = select(User).order_by(User.created.desc())
-    if user_id is not None:
-        q = q.where(User.id == user_id)
-    if email is not None:
-        q = q.where(User.email == email)
-    if user_status is not None:
-        q = q.where(User.status == user_status)
-    users = await session.execute(q)
-    users = users.scalars()
-    results = []
-    for user in users:
-        result = ResponseUserModel(id=user.id, email=user.email, status=UserStatusEnum(user.status),
-                                   created=user.created)
-        balances = await session.execute(select(UserBalance).where(UserBalance.user_id == user.id))
-        balances = balances.scalars()
-        balances = sorted([{"currency": b.currency, "amount": b.amount} for b in balances], key=lambda x: x["amount"])
-        result.balances = balances
-        results.append(result)
-    return sorted(results, key=lambda x: x.created)
+        user_status: typing.Optional[UserStatusEnum] = Query(default=None),
+        user_service: UserService = Depends(get_user_service),
+        _: User = Depends(get_current_admin),
+) -> list[ResponseUserModel]:
+    return await user_service.get_all(user_id=user_id, email=email, user_status=user_status)
 
 
-@router.patch("/users/{user_id}", response_model=typing.Optional[UserModel] | None)
-async def patch_user(user_id: int, user: RequestUserUpdateModel, session: AsyncSession = Depends(get_async_session)):
-    if user_id < 0:
-        raise BadRequestDataException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                                      detail="Unprocessable data in request")
-    db_user = await session.execute(select(User).where(User.id == user_id))
-    db_user = db_user.scalar()
-    if not db_user:
-        raise UserNotExistsException(status_code=status.HTTP_404_NOT_FOUND,
-                                     detail="User with id=`{0}` does not exist".format(user_id))
-    if db_user.status == "BLOCKED" and user.status == "BLOCKED":
-        raise UserAlreadyBlockedException(status_code=status.HTTP_400_BAD_REQUEST,
-                                          detail="User with id=`{0}` is already blocked".format(user_id))
-    if db_user.status == "ACTIVE" and user.status == "ACTIVE":
-        raise UserAlreadyActiveException(status_code=status.HTTP_400_BAD_REQUEST,
-                                         detail="User with id=`{0}` is already active".format(user_id))
-    await session.execute(update(User).values(**{"status": user.status}).where(User.id == user_id))
-    await session.commit()
-    user = await session.execute(select(User).where(User.id == user_id))
-    user = user.scalar()
-    result = UserModel(id=user.id, email=user.email, status=UserStatusEnum(user.status), created=user.created)
-    return result
+@router.get("/users/{user_id}", response_model=ResponseUserModel, status_code=status.HTTP_200_OK)
+async def get_user(
+        user_id: int,
+        user_service: UserService = Depends(get_user_service),
+        _: User = Depends(get_current_admin),
+) -> ResponseUserModel:
+    return await user_service.get_by_id(user_id)
 
+
+@router.patch("/users/{user_id}", response_model=ResponseUserModel)
+async def patch_user(
+        user_id: int,
+        user: RequestUserUpdateModel,
+        user_service: UserService = Depends(get_user_service),
+        _: User = Depends(get_current_admin),
+) -> ResponseUserModel:
+    return await user_service.update_status(user_id, user.status)

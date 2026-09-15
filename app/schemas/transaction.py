@@ -1,20 +1,22 @@
-import typing
 from datetime import datetime
+from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.enums import CurrencyEnum, TransactionStatusEnum
 
 
 class RequestTransactionModel(BaseModel):
     currency: CurrencyEnum
-    amount: float
+    amount: Decimal = Field(max_digits=20, decimal_places=8)
 
 
 class TransactionModel(BaseModel):
-    id: typing.Optional[int]
-    user_id: typing.Optional[int] = None
-    currency: typing.Optional[CurrencyEnum] = None
-    amount: typing.Optional[float] = None
-    status: typing.Optional[TransactionStatusEnum] = None
-    created: typing.Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_id: int
+    currency: CurrencyEnum
+    amount: Decimal
+    status: TransactionStatusEnum
+    created: datetime
